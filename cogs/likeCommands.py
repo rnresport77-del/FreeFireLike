@@ -174,7 +174,6 @@ class LikeCommands(commands.Cog):
                         )
 
                         embed.set_image(url="https://imgur.com/mXr0UDF.gif")
-                        await channel.send(embed=embed)
                         embed.set_footer(
                             text="🔰Developer: ! 1n Only Leo"
                         )
