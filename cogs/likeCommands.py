@@ -127,23 +127,62 @@ class LikeCommands(commands.Cog):
                         timestamp=datetime.now()
                     )
 
-                    if data.get("status") == 1:
-                        embed.description = (
-                            f"\n"
-                            f"┌  ACCOUNT\n"
-                            f"├─ NICKNAME: {data.get('player', 'Unknown')}\n"
-                            f"├─ UID: {uid}\n"
-                            f"└─ RESULT:\n"
-                            f"   ├─ ADDED: +{data.get('likes_added', 0)}\n"
-                            f"   ├─ BEFORE: {data.get('likes_before', 'N/A')}\n"
-                            f"   └─ AFTER: {data.get('likes_after', 'N/A')}\n"
-                        )
-                    else:
-                        embed.description = "This UID has already received the maximum likes today.\nPlease wait 24 hours and try again"
+if data.get("status") == 1:
+    embed = discord.Embed(
+        title="✅ LIKE SUCCESS",
+        description="💖 **Likes delivered successfully!**\n✨ Perfect execution!",
+        color=0x2ECC71,
+        timestamp=datetime.now()
+    )
 
-                    embed.set_footer(text="🔰 Developer : ! 1n Only Leo")
-                    embed.description += "\n🔗 JOIN : https://discord.gg/dHkkwvCkWt"
-                    await ctx.send(embed=embed, mention_author=True, ephemeral=is_slash)
+    # Player Info
+    embed.add_field(
+        name="👤 Player Info",
+        value=f"[UID] `{uid}`\n[Name] **{data.get('player','Unknown')}**",
+        inline=True
+    )
+
+    # Server Region
+    embed.add_field(
+        name="🌍 Server Region",
+        value=f"{server.upper()} Server",
+        inline=True
+    )
+
+    # Like Stats
+    before = data.get("likes_before","N/A")
+    after = data.get("likes_after","N/A")
+    added = data.get("likes_added",0)
+    embed.add_field(
+        name="📊 Like Stats",
+        value=f"**Before:** {before} likes\n**After:** {after} likes\n**Added:** {added} likes",
+        inline=False
+    )
+
+    # Execution Info (new instead of Daily Limit)
+    embed.add_field(
+        name="⚡ Execution Info",
+        value=f"👤 Requested by: {ctx.author.mention}\n🕒 Time: <t:{int(datetime.now().timestamp())}:R>",
+        inline=False
+    )
+
+    # Banner image
+    embed.set_image(url="https://ibb.co.com/ycdD2XS6")
+
+    # Footer
+    embed.set_footer(text="🔰 Panther Corporation | Developer: ! 1n Only Leo")
+    embed.description += "\n🔗 JOIN : https://discord.gg/dHkkwvCkWt"
+else:
+    embed = discord.Embed(
+        title="❌ LIKE FAILED",
+        description="⚠️ This UID has already received the maximum likes today.\nPlease wait **24 hours** and try again.",
+        color=0xE74C3C,
+        timestamp=datetime.now()
+    )
+    embed.set_footer(text=f"🔰 Requested by {ctx.author}", icon_url=ctx.author.display_avatar.url)
+
+await ctx.send(embed=embed, mention_author=True, ephemeral=is_slash)
+
 
         except asyncio.TimeoutError:
             await self._send_error_embed(ctx, "Timeout", "The server took too long to respond.", ephemeral=is_slash)
