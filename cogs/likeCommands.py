@@ -149,7 +149,7 @@ class LikeCommands(commands.Cog):
 
                         embed.add_field(
                             name="👤 Player Info",
-                            value=f"```UID : {uid}\nName : {data.get('player','Unknown')}```",
+                            value=f"```UID  : {uid}\nName : {data.get('player','Unknown')}```",
                             inline=True,
                         )
                         embed.add_field(
@@ -162,7 +162,7 @@ class LikeCommands(commands.Cog):
                         after = data.get("likes_after", "N/A")
                         added = data.get("likes_added", 0)
                         embed.add_field(
-                            name="📊 Like Stats",
+                            name="📊 Like Status",
                             value=f"```Before: {before} likes\nAfter : {after} likes\nAdded : {added} likes```",
                             inline=False,
                         )
@@ -173,30 +173,8 @@ class LikeCommands(commands.Cog):
                             inline=False,
                         )
 
-                        def gif_url():
-
-    return "https://imgur.com/mXr0UDF.gif" 
-
-# আপনার বট সেটআপ...
-bot = commands.Bot(command_prefix="!")
-
-@bot.command()
-async def show_my_gif(ctx):
-    # ফাংশন থেকে URL টি নিন
-    gif_link = gif_url()
-    
-    # Embed তৈরি করুন
-    embed = discord.Embed(
-        title="GIF টি লোড করা হলো! 🎉",
-        color=discord.Color.green()
-    )
-    
-    # embed.set_image() ব্যবহার করে URL টি যুক্ত করুন
-    # এটি ইমেজ বা GIF লোড করার জন্য সঠিক পদ্ধতি।
-    embed.set_image(url=gif_link) 
-    
-    # মেসেজটি পাঠান
-    await ctx.send(embed=embed)
+                        embed.set_image(url="https://imgur.com/mXr0UDF.gif")
+                        await channel.send(embed=embed)
                         embed.set_footer(
                             text="🔰Developer: ! 1n Only Leo"
                         )
