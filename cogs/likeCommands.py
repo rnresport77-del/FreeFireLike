@@ -122,7 +122,7 @@ class LikeCommands(commands.Cog):
 
                     data = await response.json()
                     embed = discord.Embed(
-                        title="FREE FIRE LIKE",
+                        title="Panther Corporation Like Bot",
                         color=0x2ECC71 if data.get("status") == 1 else 0xE74C3C,
                         timestamp=datetime.now()
                     )
@@ -141,7 +141,7 @@ class LikeCommands(commands.Cog):
                     else:
                         embed.description = "This UID has already received the maximum likes today.\nPlease wait 24 hours and try again"
 
-                    embed.set_footer(text="DEVELOPER ! 1n Only Leo")
+                    embed.set_footer(text="🔰 Developer : ! 1n Only Leo")
                     embed.description += "\n🔗 JOIN : https://discord.gg/dHkkwvCkWt"
                     await ctx.send(embed=embed, mention_author=True, ephemeral=is_slash)
 
