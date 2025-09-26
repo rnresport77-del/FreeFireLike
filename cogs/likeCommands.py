@@ -9,37 +9,36 @@ import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
-API_URL=os.getenv("API_URL")
+API_URL = os.getenv("API_URL")
 CONFIG_FILE = "like_channels.json"
 
 class LikeCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_host =API_URL
+        self.api_host = API_URL
         self.config_data = self.load_config()
         self.cooldowns = {}
         self.session = aiohttp.ClientSession()
 
-
     def load_config(self):
-        default_config = {
-            "servers": {}
-        }
+        default_config = {"servers": {}}
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, 'r') as f:
+                with open(CONFIG_FILE, "r") as f:
                     loaded_config = json.load(f)
                     loaded_config.setdefault("servers", {})
                     return loaded_config
             except json.JSONDecodeError:
-                print(f"WARNING: The configuration file '{CONFIG_FILE}' is corrupt or empty. Resetting to default configuration.")
+                print(
+                    f"WARNING: The configuration file '{CONFIG_FILE}' is corrupt or empty. Resetting to default configuration."
+                )
         self.save_config(default_config)
         return default_config
 
     def save_config(self, config_to_save=None):
         data_to_save = config_to_save if config_to_save is not None else self.config_data
         temp_file = CONFIG_FILE + ".tmp"
-        with open(temp_file, 'w') as f:
+        with open(temp_file, "w") as f:
             json.dump(data_to_save, f, indent=4)
         os.replace(temp_file, CONFIG_FILE)
 
@@ -53,7 +52,9 @@ class LikeCommands(commands.Cog):
     async def cog_load(self):
         pass
 
-    @commands.hybrid_command(name="setlikechannel", description="Sets the channels where the /like command is allowed.")
+    @commands.hybrid_command(
+        name="setlikechannel", description="Sets the channels where the /like command is allowed."
+    )
     @commands.has_permissions(administrator=True)
     @app_commands.describe(channel="The channel to allow/disallow the /like command in.")
     async def set_like_channel(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -70,19 +71,26 @@ class LikeCommands(commands.Cog):
         if channel_id_str in like_channels:
             like_channels.remove(channel_id_str)
             self.save_config()
-            await ctx.send(f"✅ Channel {channel.mention} has been **removed** from allowed channels for /like commands. The command is now **disallowed** there.", ephemeral=True)
+            await ctx.send(
+                f"✅ Channel {channel.mention} has been **removed** from allowed channels for /like commands. The command is now **disallowed** there.",
+                ephemeral=True,
+            )
         else:
             like_channels.append(channel_id_str)
             self.save_config()
-            await ctx.send(f"✅ Channel {channel.mention} is now **allowed** for /like commands. The command will **only** work in specified channels if any are set.", ephemeral=True)
+            await ctx.send(
+                f"✅ Channel {channel.mention} is now **allowed** for /like commands. The command will **only** work in specified channels if any are set.",
+                ephemeral=True,
+            )
 
     @commands.hybrid_command(name="like", description="Sends likes to a Free Fire player")
     @app_commands.describe(uid="Player UID (numbers only, minimum 6 characters)")
-    async def like_command(self, ctx: commands.Context,server:str=None , uid: str = None):
+    async def like_command(self, ctx: commands.Context, server: str = None, uid: str = None):
         is_slash = ctx.interaction is not None
 
-        if uid and server is None:
-            return await ctx.send("UID and server are required",delete_after=10)
+        if uid is None or server is None:
+            return await ctx.send("⚠️ UID and server are required.", delete_after=10)
+
         if not await self.check_channel(ctx):
             msg = "This command is not available in this channel. Please use it in an authorized channel."
             if is_slash:
@@ -91,26 +99,34 @@ class LikeCommands(commands.Cog):
                 await ctx.reply(msg, mention_author=False)
             return
 
+        # Cooldown
         user_id = ctx.author.id
         cooldown = 30
         if user_id in self.cooldowns:
             last_used = self.cooldowns[user_id]
             remaining = cooldown - (datetime.now() - last_used).seconds
             if remaining > 0:
-                await ctx.send(f"Please wait {remaining} seconds before using this command again.", ephemeral=is_slash)
+                await ctx.send(
+                    f"Please wait {remaining} seconds before using this command again.",
+                    ephemeral=is_slash,
+                )
                 return
         self.cooldowns[user_id] = datetime.now()
 
+        # UID Validation
         if not uid.isdigit() or len(uid) < 6:
-            await ctx.reply("Invalid UID. It must contain only numbers and be at least 6 characters long.", mention_author=False, ephemeral=is_slash)
+            await ctx.reply(
+                "Invalid UID. It must contain only numbers and be at least 6 characters long.",
+                mention_author=False,
+                ephemeral=is_slash,
+            )
             return
-
 
         try:
             async with ctx.typing():
                 url = f"{self.api_host}/like?uid={uid}&server={server}"
                 print(url)
-                async with self.session.get(url ) as response:
+                async with self.session.get(url) as response:
                     if response.status == 404:
                         await self._send_player_not_found(ctx, uid)
                         return
@@ -121,87 +137,105 @@ class LikeCommands(commands.Cog):
                         return
 
                     data = await response.json()
-                    embed = discord.Embed(
-                        title="Panther Corporation Like Bot",
-                        color=0x2ECC71 if data.get("status") == 1 else 0xE74C3C,
-                        timestamp=datetime.now()
-                    )
 
-if data.get("status") == 1:
-    embed = discord.Embed(
-        title="✅ LIKE SUCCESS",
-        description="💖 **Likes delivered successfully!**\n✨ Perfect execution!",
-        color=0x2ECC71,
-        timestamp=datetime.now()
-    )
+                    # === SUCCESS CASE ===
+                    if data.get("status") == 1:
+                        embed = discord.Embed(
+                            title="✅ LIKE SUCCESS",
+                            description="💖 **Likes delivered successfully!**\n✨ Perfect execution!",
+                            color=0x2ECC71,
+                            timestamp=datetime.now(),
+                        )
 
-    # Player Info
-    embed.add_field(
-        name="👤 Player Info",
-        value=f"[UID] `{uid}`\n[Name] **{data.get('player','Unknown')}**",
-        inline=True
-    )
+                        embed.add_field(
+                            name="👤 Player Info",
+                            value=f"[UID] `{uid}`\n[Name] **{data.get('player','Unknown')}**",
+                            inline=True,
+                        )
+                        embed.add_field(
+                            name="🌍 Server Region",
+                            value=f"{server.upper()} Server",
+                            inline=True,
+                        )
 
-    # Server Region
-    embed.add_field(
-        name="🌍 Server Region",
-        value=f"{server.upper()} Server",
-        inline=True
-    )
+                        before = data.get("likes_before", "N/A")
+                        after = data.get("likes_after", "N/A")
+                        added = data.get("likes_added", 0)
+                        embed.add_field(
+                            name="📊 Like Stats",
+                            value=f"**Before:** {before} likes\n**After:** {after} likes\n**Added:** {added} likes",
+                            inline=False,
+                        )
 
-    # Like Stats
-    before = data.get("likes_before","N/A")
-    after = data.get("likes_after","N/A")
-    added = data.get("likes_added",0)
-    embed.add_field(
-        name="📊 Like Stats",
-        value=f"**Before:** {before} likes\n**After:** {after} likes\n**Added:** {added} likes",
-        inline=False
-    )
+                        embed.add_field(
+                            name="⚡ Execution Info",
+                            value=f"👤 Requested by: {ctx.author.mention}\n🕒 Time: <t:{int(datetime.now().timestamp())}:R>",
+                            inline=False,
+                        )
 
-    # Execution Info (new instead of Daily Limit)
-    embed.add_field(
-        name="⚡ Execution Info",
-        value=f"👤 Requested by: {ctx.author.mention}\n🕒 Time: <t:{int(datetime.now().timestamp())}:R>",
-        inline=False
-    )
+                        embed.set_image(url="https://i.ibb.co.com/ycdD2XS6/banner.png")
+                        embed.set_footer(
+                            text="🔰 Panther Corporation | Developer: ! 1n Only Leo"
+                        )
+                        embed.description += "\n🔗 JOIN : https://discord.gg/dHkkwvCkWt"
 
-    # Banner image
-    embed.set_image(url="https://ibb.co.com/ycdD2XS6")
+                    # === FAILED CASE ===
+                    else:
+                        embed = discord.Embed(
+                            title="❌ LIKE FAILED",
+                            description="⚠️ This UID has already received the maximum likes today.\nPlease wait **24 hours** and try again.",
+                            color=0xE74C3C,
+                            timestamp=datetime.now(),
+                        )
+                        embed.set_footer(
+                            text=f"🔰 Requested by {ctx.author}",
+                            icon_url=ctx.author.display_avatar.url,
+                        )
 
-    # Footer
-    embed.set_footer(text="🔰 Panther Corporation | Developer: ! 1n Only Leo")
-    embed.description += "\n🔗 JOIN : https://discord.gg/dHkkwvCkWt"
-else:
-    embed = discord.Embed(
-        title="❌ LIKE FAILED",
-        description="⚠️ This UID has already received the maximum likes today.\nPlease wait **24 hours** and try again.",
-        color=0xE74C3C,
-        timestamp=datetime.now()
-    )
-    embed.set_footer(text=f"🔰 Requested by {ctx.author}", icon_url=ctx.author.display_avatar.url)
-
-await ctx.send(embed=embed, mention_author=True, ephemeral=is_slash)
-
+                    await ctx.send(embed=embed, mention_author=True, ephemeral=is_slash)
 
         except asyncio.TimeoutError:
-            await self._send_error_embed(ctx, "Timeout", "The server took too long to respond.", ephemeral=is_slash)
+            await self._send_error_embed(
+                ctx, "Timeout", "The server took too long to respond.", ephemeral=is_slash
+            )
         except Exception as e:
             print(f"Unexpected error in like_command: {e}")
-            await self._send_error_embed(ctx, "Critical Error", "An unexpected error occurred. Please try again later.", ephemeral=is_slash)
+            await self._send_error_embed(
+                ctx,
+                "Critical Error",
+                "An unexpected error occurred. Please try again later.",
+                ephemeral=is_slash,
+            )
 
     async def _send_player_not_found(self, ctx, uid):
-        embed = discord.Embed(title="Player Not Found", description=f"The UID {uid} does not exist or is not accessible.", color=0xE74C3C)
-        embed.add_field(name="Tip", value="Make sure that:\n- The UID is correct\n- The player is not private", inline=False)
+        embed = discord.Embed(
+            title="Player Not Found",
+            description=f"The UID {uid} does not exist or is not accessible.",
+            color=0xE74C3C,
+        )
+        embed.add_field(
+            name="Tip",
+            value="Make sure that:\n- The UID is correct\n- The player is not private",
+            inline=False,
+        )
         await ctx.send(embed=embed, ephemeral=True)
-        
+
     async def _send_api_error(self, ctx):
-        embed = discord.Embed(title="⚠️ Service Unavailable", description="The Free Fire API is not responding at the moment.", color=0xF39C12)
+        embed = discord.Embed(
+            title="⚠️ Service Unavailable",
+            description="The Free Fire API is not responding at the moment.",
+            color=0xF39C12,
+        )
         embed.add_field(name="Solution", value="Try again in a few minutes.", inline=False)
         await ctx.send(embed=embed, ephemeral=True)
 
     async def _send_error_embed(self, ctx, title, description, ephemeral=True):
-        embed = discord.Embed(title=f"❌ {title}", description=description, color=discord.Color.red(), timestamp=datetime.now())
+        embed = discord.Embed(
+            title=f"❌ {title}",
+            description=description,
+            color=discord.Color.red(),
+            timestamp=datetime.now(),
+        )
         embed.set_footer(text="An error occurred.")
         await ctx.send(embed=embed, ephemeral=ephemeral)
 
