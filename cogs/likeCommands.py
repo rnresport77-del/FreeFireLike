@@ -141,7 +141,7 @@ class LikeCommands(commands.Cog):
                     # === SUCCESS CASE ===
                     if data.get("status") == 1:
                         embed = discord.Embed(
-                            title="👑Panther Corporation👑",
+                            title="👑 Panther Corporation 👑",
                             description="💖 **Likes delivered successfully!**\n✨ Perfect execution!",
                             color=0x2ECC71,
                             timestamp=datetime.now(),
@@ -149,7 +149,7 @@ class LikeCommands(commands.Cog):
 
                         embed.add_field(
                             name="👤 Player Info",
-                            value=f"```[UID] {uid}\n[Name] {data.get('player','Unknown')}```",
+                            value=f"```UID : {uid}\nName : {data.get('player','Unknown')}```",
                             inline=True,
                         )
                         embed.add_field(
@@ -163,7 +163,7 @@ class LikeCommands(commands.Cog):
                         added = data.get("likes_added", 0)
                         embed.add_field(
                             name="📊 Like Stats",
-                            value=f"```Before: {before} likes\n After: {after} likes\n Added: {added} likes```",
+                            value=f"```Before: {before} likes\nAfter : {after} likes\nAdded : {added} likes```",
                             inline=False,
                         )
 
@@ -173,7 +173,7 @@ class LikeCommands(commands.Cog):
                             inline=False,
                         )
 
-                        embed.set_image(url="https://imgur.com/a/Uq2SH2T")
+                        embed.set_image(url="https://jumpshare.com/s/q9bAICT26uuSfC6Pb5VI")
                         embed.set_footer(
                             text="🔰Developer: ! 1n Only Leo"
                         )
