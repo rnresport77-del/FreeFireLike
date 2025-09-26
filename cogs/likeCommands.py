@@ -173,7 +173,7 @@ class LikeCommands(commands.Cog):
                             inline=False,
                         )
 
-                        embed.set_image(url="https://i.ibb.co.com/ycdD2XS6/banner.png")
+                        embed.set_image(url="https://ibb.co.com/ycdD2XS6")
                         embed.set_footer(
                             text="🔰 Panther Corporation | Developer: ! 1n Only Leo"
                         )
