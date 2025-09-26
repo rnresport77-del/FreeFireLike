@@ -173,7 +173,30 @@ class LikeCommands(commands.Cog):
                             inline=False,
                         )
 
-                        embed.set_image(url="https://jumpshare.com/s/q9bAICT26uuSfC6Pb5VI")
+                        def gif_url():
+
+    return "https://imgur.com/mXr0UDF.gif" 
+
+# আপনার বট সেটআপ...
+bot = commands.Bot(command_prefix="!")
+
+@bot.command()
+async def show_my_gif(ctx):
+    # ফাংশন থেকে URL টি নিন
+    gif_link = gif_url()
+    
+    # Embed তৈরি করুন
+    embed = discord.Embed(
+        title="GIF টি লোড করা হলো! 🎉",
+        color=discord.Color.green()
+    )
+    
+    # embed.set_image() ব্যবহার করে URL টি যুক্ত করুন
+    # এটি ইমেজ বা GIF লোড করার জন্য সঠিক পদ্ধতি।
+    embed.set_image(url=gif_link) 
+    
+    # মেসেজটি পাঠান
+    await ctx.send(embed=embed)
                         embed.set_footer(
                             text="🔰Developer: ! 1n Only Leo"
                         )
