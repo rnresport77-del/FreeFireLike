@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 import aiohttp
 from datetime import datetime
@@ -19,6 +19,7 @@ class LikeCommands(commands.Cog):
         self.config_data = self.load_config()
         self.cooldowns = {}
         self.session = aiohttp.ClientSession()
+        self.auto_like_loop.start()  # Background task চালু হবে
 
     def load_config(self):
         default_config = {"servers": {}}
@@ -52,6 +53,9 @@ class LikeCommands(commands.Cog):
     async def cog_load(self):
         pass
 
+    # ============================
+    # SET LIKE CHANNEL (manual use)
+    # ============================
     @commands.hybrid_command(
         name="setlikechannel", description="Sets the channels where the /like command is allowed."
     )
@@ -72,17 +76,87 @@ class LikeCommands(commands.Cog):
             like_channels.remove(channel_id_str)
             self.save_config()
             await ctx.send(
-                f"✅ Channel {channel.mention} has been **removed** from allowed channels for /like commands. The command is now **disallowed** there.",
+                f"✅ Channel {channel.mention} has been **removed** from allowed channels for /like commands.",
                 ephemeral=True,
             )
         else:
             like_channels.append(channel_id_str)
             self.save_config()
             await ctx.send(
-                f"✅ Channel {channel.mention} is now **allowed** for /like commands. The command will **only** work in specified channels if any are set.",
+                f"✅ Channel {channel.mention} is now **allowed** for /like commands.",
                 ephemeral=True,
             )
 
+    # ============================
+    # AUTO LIKE SETUP CMD
+    # ============================
+    @commands.hybrid_command(
+        name="auto_like", description="Setup auto-like every 24 hours in a channel."
+    )
+    @commands.has_permissions(administrator=True)
+    @app_commands.describe(channel="Channel where auto-like messages will be sent", server="Server region", uid="Player UID")
+    async def set_auto_like(self, ctx: commands.Context, channel: discord.TextChannel, server: str, uid: str):
+        if not uid.isdigit() or len(uid) < 6:
+            await ctx.send("❌ Invalid UID. It must be at least 6 digits.", ephemeral=True)
+            return
+
+        guild_id = str(ctx.guild.id)
+        server_config = self.config_data["servers"].setdefault(guild_id, {})
+        server_config["auto_like_channel"] = str(channel.id)
+        server_config["auto_uid"] = uid
+        server_config["auto_server"] = server
+
+        self.save_config()
+
+        await ctx.send(
+            f"✅ Auto-like has been enabled!\nChannel: {channel.mention}\nUID: `{uid}`\nServer: `{server.upper()}`\n\nThe bot will send likes every 24 hours.",
+            ephemeral=True,
+        )
+
+    # ============================
+    # BACKGROUND AUTO LIKE LOOP
+    # ============================
+    @tasks.loop(hours=24)
+    async def auto_like_loop(self):
+        for guild_id, server_config in self.config_data.get("servers", {}).items():
+            channel_id = server_config.get("auto_like_channel")
+            uid = server_config.get("auto_uid")
+            server = server_config.get("auto_server")
+
+            if not channel_id or not uid or not server:
+                continue
+
+            channel = self.bot.get_channel(int(channel_id))
+            if not channel:
+                continue
+
+            try:
+                url = f"{self.api_host}/like?uid={uid}&server={server}"
+                async with self.session.get(url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("status") == 1:
+                            embed = discord.Embed(
+                                title="🤖 Auto-Like Executed",
+                                description=f"💖 Likes delivered automatically for **UID {uid}** on **{server.upper()}** server!",
+                                color=0x2ECC71,
+                                timestamp=datetime.now()
+                            )
+                            await channel.send(embed=embed)
+                        else:
+                            await channel.send(f"❌ Auto-like failed for UID `{uid}`.")
+                    else:
+                        await channel.send("⚠️ API Error during auto-like.")
+            except Exception as e:
+                print(f"Auto-like error: {e}")
+
+    @auto_like_loop.before_loop
+    async def before_auto_like_loop(self):
+        await self.bot.wait_until_ready()
+
+    # ============================
+    # NORMAL LIKE COMMAND
+    # ============================
     @commands.hybrid_command(name="like", description="Sends likes to a Free Fire player")
     @app_commands.describe(uid="Player UID (numbers only, minimum 6 characters)")
     async def like_command(self, ctx: commands.Context, server: str = None, uid: str = None):
