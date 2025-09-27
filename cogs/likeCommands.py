@@ -214,6 +214,17 @@ class LikeCommands(commands.Cog):
                             value=f"```Before: {before} likes\nAfter : {after} likes\nAdded : {added} likes```",
                             inline=False,
                         )
+                                                embed.add_field(
+                            name="⚡ Execution Info",
+                            value=f"👤 Requested by: {ctx.author.mention}\n🕒 Time: <t:{int(datetime.now().timestamp())}:R>",
+                            inline=False,
+                        )
+
+                        embed.set_image(url="https://imgur.com/mXr0UDF.gif")
+                        embed.set_footer(
+                            text="🔰Developer: ! 1n Only Leo"
+                        )
+                        embed.description += "\n🔗 JOIN : https://discord.gg/dHkkwvCkWt"
                         embed.set_footer(text=f"Requested by {ctx.author}")
                     else:
                         embed = discord.Embed(
