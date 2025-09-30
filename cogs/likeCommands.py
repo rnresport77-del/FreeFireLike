@@ -141,7 +141,7 @@ class LikeCommands(commands.Cog):
                     # === SUCCESS CASE ===
                     if data.get("status") == 1:
                         embed = discord.Embed(
-                            title="👑 Panther Corporation 👑",
+                            title="👑 VenoX Corporation 👑",
                             description="💖 **Likes delivered successfully!**\n✨ Perfect execution!",
                             color=0x2ECC71,
                             timestamp=datetime.now(),
@@ -173,7 +173,7 @@ class LikeCommands(commands.Cog):
                             inline=False,
                         )
 
-                        embed.set_image(url="https://imgur.com/mXr0UDF.gif")
+                        embed.set_image(url="https://imgur.com/DP9mL1P.gif")
                         embed.set_footer(
                             text="🔰Developer: ! 1n Only Leo"
                         )
